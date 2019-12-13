@@ -3,17 +3,18 @@ import cv2
 import numpy as np
 
 # from scipy import stats
-# NUM_FRAMES = 5
+NUM_FRAMES = 5
 
 # cap = cv2.VideoCapture("/home/ayman/Desktop/video.mp4")
 cap = cv2.VideoCapture(0)
 frame = cap.read()[1]
 # frame = im.resize(frame, width=500)
-# median_frame = np.zeros(cap.read()[1].shape[:2], np.uint8)
+median_frame = np.zeros(cap.read()[1].shape[:2], np.uint8)
 current = np.zeros(frame.shape, np.uint8)
 current_1 = np.zeros(frame.shape, np.uint8)
 current_2 = np.zeros(frame.shape, np.uint8)
 moving_mask = np.zeros(frame.shape[:2], np.bool_)
+frames = NUM_FRAMES * [np.zeros(frame.shape[:2], dtype=np.uint8)]
 haar_cascade_face = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 
@@ -33,22 +34,43 @@ def remove_face(gray, image):
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 0), cv2.FILLED)
 
 
-# i = 0
+def draw_max_contour(binary_image):
+    contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    result = np.zeros(binary_image.shape)
+    if len(contours) != 0:
+        max_contour = max(contours, key=cv2.contourArea)
+        cv2.drawContours(result, [max_contour], 0, (255, 255, 255), cv2.FILLED)
+    return result
+
+
+def get_color_mask(frame):
+    min_YCrCb = np.array([0, 133, 77], np.uint8)
+    max_YCrCb = np.array([255, 173, 127], np.uint8)
+    # frame = cv2.flip(frame, 1)
+    frame = cv2.GaussianBlur(frame, (15, 15), cv2.BORDER_DEFAULT)
+    imageYCrCb = cv2.cvtColor(frame, cv2.COLOR_BGR2YCR_CB)
+    skinRegion = cv2.inRange(imageYCrCb, min_YCrCb, max_YCrCb)
+    # frame = cv2.morphologyEx(frame, cv2.MORPH_CLOSE, (11, 11))
+    return skinRegion.astype(np.bool_)
+
+
+i = 0
 # frames = np.array(NUM_FRAMES * [median_frame], np.uint8)
 while True:
     ret, original_frame = cap.read()
     if not ret:
         break
+    o_frame = original_frame.copy()
     # frame = im.resize(frame, width=500)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # gray = cv2.medianBlur(gray, 5)
     # gray = cv2.erode(gray, (20, 20), iterations=20)
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
-    # frames[i] = gray
-    # i = (i + 1) % NUM_FRAMES
-    # median_frame = np.median(frames, axis=0).astype(np.uint8)
+    frames[i] = gray
+    i = (i + 1) % NUM_FRAMES
+    median_frame = np.median(frames, axis=0).astype(np.uint8)
     frame = original_frame.copy()
-    remove_face(gray, frame)
+    # remove_face(gray, frame)
     yCrCb = cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
     current = yCrCb = cv2.GaussianBlur(yCrCb, (5, 5), 0)
     result = np.zeros(yCrCb.shape[:2], np.uint8)
@@ -83,7 +105,23 @@ while True:
             y_max = y
     cv2.rectangle(original_frame, (x_max, y_max), (x_max + w_max, y_max + h_max), (0, 255, 0), 2)
     cv2.drawContours(original_frame, contours, -1, (255, 0, 0))
-    cv2.imshow("image", original_frame)
+    result = cv2.absdiff(gray, median_frame)
+    result[result < 10] = 0
+    result[result >= 10] = 255
+    result = cv2.erode(result, np.ones((3, 3)), iterations=5)
+    result = cv2.dilate(result, np.ones((3, 3)), iterations=50)
+    result = cv2.erode(result, np.ones((3, 3)), iterations=45)
+    result = draw_max_contour(result)
+    result = result.astype(np.bool_)
+    # result = np.zeros(result.shape, dtype=np.bool_)
+    # result[y:y + h, x:x + w] = 1
+    #
+    # img = np.zeros(gray.shape, dtype=np.uint8)
+    # img[result] = gray[result]
+    skin_mask = get_color_mask(o_frame)
+    hello = result & skin_mask
+    # hello = cv2.dilate(hello.astype(np.uint8), np.ones((3, 3)), iterations=10)
+    cv2.imshow("image", hello.astype(np.uint8) * 255)
     # cv2.imshow("Face", frame)
     # cv2.imshow("gray", gray)
     # cv2.imshow("mean", median_frame)
