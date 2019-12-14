@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import imutils
 
 class HandDetector:
     def __init__(self):
@@ -8,18 +8,27 @@ class HandDetector:
         self.frame_2 = None
         self.min_YCrCb = np.array([0, 133, 77], np.uint8)
         self.max_YCrCb = np.array([255, 173, 127], np.uint8)
+        self.last_contour = None
+        self.haar_cascade_face = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
     @staticmethod
-    def get_max_contour(mask, use_hull=False):
-        contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        mask = np.zeros(mask.shape, np.uint8)
+    def __get_max_contour(mask, use_hull=False):
+        contours = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = imutils.grab_contours(contours)
         max_contour = None
         if len(contours) != 0:
             max_contour = max(contours, key=cv2.contourArea)
             if use_hull:
                 max_contour = cv2.convexHull(max_contour)
-            cv2.drawContours(mask, [max_contour], 0, (1, 0, 0), cv2.FILLED)
-        return max_contour, mask.astype(np.bool_)
+        return max_contour
+
+    @staticmethod
+    def __draw_max_contour(contour, mask_shape):
+        mask = np.zeros(mask_shape, np.uint8)
+        if contour is None:
+            return mask.astype(np.uint8)
+        cv2.drawContours(mask, [contour], 0, (1, 0, 0), cv2.FILLED)
+        return mask.astype(np.bool_)
 
     def get_motion_mask(self, current_frame, threshold=30):
         if self.frame_2 is None:
@@ -37,7 +46,9 @@ class HandDetector:
         s_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10))
         motion_mask = cv2.dilate(motion_mask, s_element, iterations=10)
         motion_mask = cv2.erode(motion_mask, s_element, iterations=9)
-        _, motion_mask = self.get_max_contour(motion_mask, True)
+        max_contour = self.__get_max_contour(motion_mask, True)
+        max_contour = self.check_contour(max_contour)
+        motion_mask = self.__draw_max_contour(max_contour, motion_mask.shape)
         self.frame_2 = self.frame_1
         self.frame_1 = current_frame
         return motion_mask
@@ -48,7 +59,8 @@ class HandDetector:
         skin_mask = cv2.dilate(skin_mask, np.ones((3, 3)), iterations=2)
         return skin_mask.astype(np.bool_)
 
-    def get_contour_center(self, contour):
+    @staticmethod
+    def get_contour_center(contour):
         moments = cv2.moments(contour)
         if moments["m00"] == 0:
             return -1, -1
@@ -59,8 +71,27 @@ class HandDetector:
     def detect_hand(self, frame):
         frame = cv2.GaussianBlur(frame, (5, 5), 0)
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        self.remove_face(gray_frame, frame)
         color_mask = self.get_color_mask(frame)
         motion_mask = self.get_motion_mask(gray_frame)
         mask = motion_mask & color_mask
-        contour, mask = self.get_max_contour(mask)
-        return self.get_contour_center(contour), mask
+        contour = self.__get_max_contour(mask)
+        mask = self.__draw_max_contour(contour, mask.shape)
+        return contour, self.get_contour_center(contour), mask
+
+    def check_contour(self, contour, min_area=15000, r=1):
+        if contour is None:
+            if self.last_contour is not None:
+                return self.last_contour
+            return None
+        x, y, w, h = cv2.boundingRect(contour)
+        ratio = 1.0 * w / h
+        if (self.last_contour is not None) and ((cv2.contourArea(contour) < min_area) or (ratio > r)):
+            contour = self.last_contour
+        self.last_contour = contour
+        return contour
+
+    def remove_face(self, gray, image):
+        faces_rects = self.haar_cascade_face.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5)
+        for (x, y, w, h) in faces_rects:
+            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 0), cv2.FILLED)
