@@ -68,15 +68,16 @@ while True:
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
     frames[i] = gray
     i = (i + 1) % NUM_FRAMES
+    result = cv2.absdiff(gray, median_frame)
     median_frame = np.median(frames, axis=0).astype(np.uint8)
     frame = original_frame.copy()
     # remove_face(gray, frame)
-    yCrCb = cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
-    current = yCrCb = cv2.GaussianBlur(yCrCb, (5, 5), 0)
-    result = np.zeros(yCrCb.shape[:2], np.uint8)
-    color_mask = (54 <= yCrCb[:, :, 0]) & (yCrCb[:, :, 0] <= 163) \
-                 & (131 <= yCrCb[:, :, 1]) & (yCrCb[:, :, 1] <= 157) \
-                 & (110 <= yCrCb[:, :, 2]) & (yCrCb[:, :, 2] <= 135)
+    # yCrCb = cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
+    # current = yCrCb = cv2.GaussianBlur(yCrCb, (5, 5), 0)
+    # result = np.zeros(yCrCb.shape[:2], np.uint8)
+    # color_mask = (54 <= yCrCb[:, :, 0]) & (yCrCb[:, :, 0] <= 163) \
+    #              & (131 <= yCrCb[:, :, 1]) & (yCrCb[:, :, 1] <= 157) \
+    #              & (110 <= yCrCb[:, :, 2]) & (yCrCb[:, :, 2] <= 135)
 
     # result = abs(gray - median_frame)
 
@@ -85,27 +86,26 @@ while True:
     # moving_mask_result = cv2.dilate(moving_mask_result, np.ones((3, 3)), iterations=5)
     # if moving_mask_result.sum() > 15000:
     #     moving_mask = moving_mask_check
-    moving_mask = get_moving_mask(0, 5, 10) & get_moving_mask(1, 5, 10) & get_moving_mask(2, 5, 10)
-    mask = moving_mask & color_mask
-    result[mask] = 255
+    # moving_mask = get_moving_mask(0, 5, 10) & get_moving_mask(1, 5, 10) & get_moving_mask(2, 5, 10)
+    # mask = moving_mask & color_mask
+    # result[mask] = 255
     # result = abs(gray - median_frame)
-    result = cv2.erode(result, np.ones((3, 3)), iterations=2)
-    result = cv2.dilate(result, np.ones((3, 3)), iterations=2)
+    # result = cv2.erode(result, np.ones((3, 3)), iterations=2)
+    # result = cv2.dilate(result, np.ones((3, 3)), iterations=2)
     # result = cv2.dilate(result, np.ones((3, 3)), iterations=10)
     # result = cv2.erode(result, np.ones((3, 3)), iterations=10)
-    contours = cv2.findContours(result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    contours = imutils.grab_contours(contours)
-    x_max = y_max = w_max = h_max = 0
-    for c in contours:
-        x, y, w, h = cv2.boundingRect(c)
-        if w * h > w_max * h_max:
-            w_max = w
-            h_max = h
-            x_max = x
-            y_max = y
-    cv2.rectangle(original_frame, (x_max, y_max), (x_max + w_max, y_max + h_max), (0, 255, 0), 2)
-    cv2.drawContours(original_frame, contours, -1, (255, 0, 0))
-    result = cv2.absdiff(gray, median_frame)
+    # contours = cv2.findContours(result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # contours = imutils.grab_contours(contours)
+    # x_max = y_max = w_max = h_max = 0
+    # for c in contours:
+    #     x, y, w, h = cv2.boundingRect(c)
+    #     if w * h > w_max * h_max:
+    #         w_max = w
+    #         h_max = h
+    #         x_max = x
+    #         y_max = y
+    # cv2.rectangle(original_frame, (x_max, y_max), (x_max + w_max, y_max + h_max), (0, 255, 0), 2)
+    # cv2.drawContours(original_frame, contours, -1, (255, 0, 0))
     result[result < 10] = 0
     result[result >= 10] = 255
     result = cv2.erode(result, np.ones((3, 3)), iterations=5)
@@ -125,8 +125,8 @@ while True:
     # cv2.imshow("Face", frame)
     # cv2.imshow("gray", gray)
     # cv2.imshow("mean", median_frame)
-    current_2 = current_1
-    current_1 = yCrCb
+    # current_2 = current_1
+    # current_1 = yCrCb
     if cv2.waitKey(10) & 0xFF == ord('q'):
         break
 # When everything done, release the capture
