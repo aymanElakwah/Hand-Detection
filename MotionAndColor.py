@@ -36,7 +36,7 @@ def remove_face(gray, image):
 
 
 def draw_max_contour(binary_image):
-    contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     result = np.zeros(binary_image.shape)
     if len(contours) != 0:
         max_contour = max(contours, key=cv2.contourArea)
@@ -59,9 +59,11 @@ def get_color_mask(frame):
     return skinRegion.astype(np.bool_)
 
 
-def check_contour(contour, minPoints=100):
+def check_contour(contour, min_area=15000, r=1):
     global lst_contour
-    if (lst_contour is not None) and (len(contour) < minPoints):
+    x, y, w, h = cv2.boundingRect(contour)
+    ratio = 1.0 * w / h
+    if (lst_contour is not None) and ((cv2.contourArea(contour) < min_area) or (ratio > r)):
         contour = lst_contour
     lst_contour = contour
     return contour
