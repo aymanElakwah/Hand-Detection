@@ -8,17 +8,20 @@ class HandDetector:
         self.frame_2 = None
         self.min_YCrCb = np.array([0, 133, 77], np.uint8)
         self.max_YCrCb = np.array([255, 173, 127], np.uint8)
+        self.last_contour = None
 
-    @staticmethod
-    def get_max_contour(mask, use_hull=False):
-        contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    def get_max_contour(self, mask, use_hull=False):
+        _, contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         mask = np.zeros(mask.shape, np.uint8)
         max_contour = None
         if len(contours) != 0:
             max_contour = max(contours, key=cv2.contourArea)
             if use_hull:
                 max_contour = cv2.convexHull(max_contour)
+            max_contour = self.check_contour(max_contour)
             cv2.drawContours(mask, [max_contour], 0, (1, 0, 0), cv2.FILLED)
+        elif self.last_contour is not None:
+            cv2.drawContours(mask, [self.last_contour], 0, (255, 255, 255), cv2.FILLED)
         return max_contour, mask.astype(np.bool_)
 
     def get_motion_mask(self, current_frame, threshold=30):
@@ -64,3 +67,11 @@ class HandDetector:
         mask = motion_mask & color_mask
         contour, mask = self.get_max_contour(mask)
         return self.get_contour_center(contour), mask
+
+    def check_contour(self, contour, min_area=15000, r=1):
+        x, y, w, h = cv2.boundingRect(contour)
+        ratio = 1.0 * w / h
+        if (self.last_contour is not None) and ((cv2.contourArea(contour) < min_area) or (ratio > r)):
+            contour = self.last_contour
+        self.last_contour = contour
+        return contour
