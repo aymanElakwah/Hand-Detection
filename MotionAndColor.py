@@ -15,6 +15,7 @@ current_1 = np.zeros(frame.shape, np.uint8)
 current_2 = np.zeros(frame.shape, np.uint8)
 moving_mask = np.zeros(frame.shape[:2], np.bool_)
 frames = NUM_FRAMES * [np.zeros(frame.shape[:2], dtype=np.uint8)]
+lst_contour = None
 haar_cascade_face = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 
@@ -39,7 +40,11 @@ def draw_max_contour(binary_image):
     result = np.zeros(binary_image.shape)
     if len(contours) != 0:
         max_contour = max(contours, key=cv2.contourArea)
-        cv2.drawContours(result, [max_contour], 0, (255, 255, 255), cv2.FILLED)
+        hull = cv2.convexHull(max_contour)
+        hull = check_contour(hull)
+        cv2.drawContours(result, [hull], 0, (1, 0, 0), cv2.FILLED)
+    elif lst_contour is not None:
+        cv2.drawContours(result, [lst_contour], 0, (255, 255, 255), cv2.FILLED)
     return result
 
 
@@ -52,6 +57,26 @@ def get_color_mask(frame):
     skinRegion = cv2.inRange(imageYCrCb, min_YCrCb, max_YCrCb)
     # frame = cv2.morphologyEx(frame, cv2.MORPH_CLOSE, (11, 11))
     return skinRegion.astype(np.bool_)
+
+
+def check_contour(contour, minPoints=100):
+    global lst_contour
+    if (lst_contour is not None) and (len(contour) < minPoints):
+        contour = lst_contour
+    lst_contour = contour
+    return contour
+
+
+# def draw_max_contour(binary_image):
+#     contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#     result = np.zeros(binary_image.shape)
+#     if len(contours) != 0:
+#         max_contour = max(contours, key=cv2.contourArea)
+#         max_contour = check_contour(max_contour)
+#         cv2.drawContours(result, [max_contour], 0, (255, 255, 255), cv2.FILLED)
+#     elif lst_contour is not None:
+#         cv2.drawContours(result, [lst_contour], 0, (255, 255, 255), cv2.FILLED)
+#     return result
 
 
 i = 0
@@ -106,25 +131,34 @@ while True:
     #         y_max = y
     # cv2.rectangle(original_frame, (x_max, y_max), (x_max + w_max, y_max + h_max), (0, 255, 0), 2)
     # cv2.drawContours(original_frame, contours, -1, (255, 0, 0))
-    result[result < 10] = 0
-    result[result >= 10] = 255
-    result = cv2.erode(result, np.ones((3, 3)), iterations=5)
-    result = cv2.dilate(result, np.ones((3, 3)), iterations=50)
-    result = cv2.erode(result, np.ones((3, 3)), iterations=45)
+    result[result < 5] = 0
+    result[result >= 5] = 255
+
+    result = cv2.erode(result, np.ones((3, 3), dtype='uint8'), iterations=2)
+    result = cv2.dilate(result, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (12, 8)), iterations=5)
+    result = cv2.erode(result, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10)), iterations=5)
+
+    # result = cv2.erode(result, np.ones((3, 3)), iterations=5)
+    # result = cv2.dilate(result, np.ones((3, 3)), iterations=50)
+    # result = cv2.erode(result, np.ones((3, 3)), iterations=45)
     result = draw_max_contour(result)
     result = result.astype(np.bool_)
     # result = np.zeros(result.shape, dtype=np.bool_)
     # result[y:y + h, x:x + w] = 1
     #
-    # img = np.zeros(gray.shape, dtype=np.uint8)
+    img = np.zeros(o_frame.shape, dtype=np.uint8)
     # img[result] = gray[result]
     skin_mask = get_color_mask(o_frame)
-    hello = result & skin_mask
-    # hello = cv2.dilate(hello.astype(np.uint8), np.ones((3, 3)), iterations=10)
-    cv2.imshow("image", hello.astype(np.uint8) * 255)
+    mask = result & skin_mask
+    # mask = cv2.dilate(mask.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=5)
+    mask = mask.astype(np.bool_)
+    img[mask] = o_frame[mask]
+    # cv2.imshow("image", hello.astype(np.uint8) * 255)
     # cv2.imshow("Face", frame)
     # cv2.imshow("gray", gray)
-    # cv2.imshow("mean", median_frame)
+    cv2.imshow("img", img)
+    cv2.imshow("gray", gray)
+    cv2.imshow("median", median_frame)
     # current_2 = current_1
     # current_1 = yCrCb
     if cv2.waitKey(10) & 0xFF == ord('q'):
