@@ -4,7 +4,6 @@ import numpy as np
 
 # from scipy import stats
 NUM_FRAMES = 5
-
 # cap = cv2.VideoCapture("/home/ayman/Desktop/video.mp4")
 cap = cv2.VideoCapture(0)
 frame = cap.read()[1]
@@ -131,5 +130,4 @@ while True:
         break
 # When everything done, release the capture
 cap.release()
-
 cv2.destroyAllWindows()
