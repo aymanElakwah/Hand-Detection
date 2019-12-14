@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import imutils
 from sklearn.metrics import pairwise
 
 
@@ -7,7 +8,7 @@ class HandGestures:
 
     @staticmethod
     def count(thresholded, segmented):  # frame thresholded , max contour
-        thresholded = thresholded.astype(np.uint8)
+        thresholded = thresholded.astype(np.uint8) * 255
         if segmented is None:
             return 0
         cv2.imshow("binary", thresholded)
@@ -26,7 +27,8 @@ class HandGestures:
         circular_roi = np.zeros(thresholded.shape[:2], dtype="uint8")
         cv2.circle(circular_roi, (cX, cY), radius, 255, 1)
         circular_roi = cv2.bitwise_and(thresholded, thresholded, mask=circular_roi)
-        cnts, _ = cv2.findContours(circular_roi.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        cnts = cv2.findContours(circular_roi.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
         count = 0
         for c in cnts:
             (x, y, w, h) = cv2.boundingRect(c)
