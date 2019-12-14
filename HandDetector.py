@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import imutils
 
 class HandDetector:
     def __init__(self):
@@ -12,7 +12,8 @@ class HandDetector:
 
     @staticmethod
     def __get_max_contour(mask, use_hull=False):
-        contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = imutils.grab_contours(contours)
         max_contour = None
         if len(contours) != 0:
             max_contour = max(contours, key=cv2.contourArea)
