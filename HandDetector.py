@@ -9,6 +9,7 @@ class HandDetector:
         self.min_YCrCb = np.array([0, 133, 77], np.uint8)
         self.max_YCrCb = np.array([255, 173, 127], np.uint8)
         self.last_contour = None
+        self.haar_cascade_face = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
     @staticmethod
     def __get_max_contour(mask, use_hull=False):
@@ -69,12 +70,13 @@ class HandDetector:
     def detect_hand(self, frame):
         frame = cv2.GaussianBlur(frame, (5, 5), 0)
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        self.remove_face(gray_frame, frame)
         color_mask = self.get_color_mask(frame)
         motion_mask = self.get_motion_mask(gray_frame)
         mask = motion_mask & color_mask
         contour = self.__get_max_contour(mask)
         mask = self.__draw_max_contour(contour, mask.shape)
-        return self.get_contour_center(contour), mask
+        return contour, self.get_contour_center(contour), mask
 
     def check_contour(self, contour, min_area=15000, r=1):
         if contour is None:
@@ -87,3 +89,8 @@ class HandDetector:
             contour = self.last_contour
         self.last_contour = contour
         return contour
+
+    def remove_face(self, gray, image):
+        faces_rects = self.haar_cascade_face.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5)
+        for (x, y, w, h) in faces_rects:
+            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 0), cv2.FILLED)

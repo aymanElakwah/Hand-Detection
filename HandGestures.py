@@ -1,33 +1,32 @@
 import cv2
-import sklearn as io
-from sklearn.metrics.pairwise import euclidean_distances
 import numpy as np
-import imutils
-from scipy.spatial import distance as dist
-from matplotlib import pyplot as plt
-from scipy import signal
-from scipy import misc
 from sklearn.metrics import pairwise
+
+
 class HandGestures:
-    def __init__(self):
-         self.frame_1 = None
-    def count(self,thresholded, segmented):# frame thresholded , max contour
-        cv2.imshow("binary",thresholded)
+
+    @staticmethod
+    def count(thresholded, segmented):  # frame thresholded , max contour
+        thresholded = thresholded.astype(np.uint8)
+        if segmented is None:
+            return 0
+        cv2.imshow("binary", thresholded)
         chull = cv2.convexHull(segmented)
-        extreme_top    = tuple(chull[chull[:, :, 1].argmin()][0])
+        extreme_top = tuple(chull[chull[:, :, 1].argmin()][0])
         extreme_bottom = tuple(chull[chull[:, :, 1].argmax()][0])
-        extreme_left   = tuple(chull[chull[:, :, 0].argmin()][0])
-        extreme_right  = tuple(chull[chull[:, :, 0].argmax()][0])
+        extreme_left = tuple(chull[chull[:, :, 0].argmin()][0])
+        extreme_right = tuple(chull[chull[:, :, 0].argmax()][0])
         cX = int((extreme_left[0] + extreme_right[0]) / 2)
         cY = int((extreme_top[1] + extreme_bottom[1]) / 2)
-        distance = pairwise.euclidean_distances([(cX, cY)], Y=[extreme_left, extreme_right, extreme_top, extreme_bottom])[0]
+        distance = \
+            pairwise.euclidean_distances([(cX, cY)], Y=[extreme_left, extreme_right, extreme_top, extreme_bottom])[0]
         maximum_distance = distance[distance.argmax()]
         radius = int(0.8 * maximum_distance)
         circumference = (2 * np.pi * radius)
         circular_roi = np.zeros(thresholded.shape[:2], dtype="uint8")
         cv2.circle(circular_roi, (cX, cY), radius, 255, 1)
         circular_roi = cv2.bitwise_and(thresholded, thresholded, mask=circular_roi)
-        (_, cnts, _) = cv2.findContours(circular_roi.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        cnts, _ = cv2.findContours(circular_roi.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         count = 0
         for c in cnts:
             (x, y, w, h) = cv2.boundingRect(c)
