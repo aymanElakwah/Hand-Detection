@@ -13,12 +13,13 @@ class HandDetector:
     def get_max_contour(mask, use_hull=False):
         contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         mask = np.zeros(mask.shape, np.uint8)
+        max_contour = None
         if len(contours) != 0:
             max_contour = max(contours, key=cv2.contourArea)
             if use_hull:
                 max_contour = cv2.convexHull(max_contour)
             cv2.drawContours(mask, [max_contour], 0, (1, 0, 0), cv2.FILLED)
-        return mask.astype(np.bool_)
+        return max_contour, mask.astype(np.bool_)
 
     def get_motion_mask(self, current_frame, threshold=30):
         if self.frame_2 is None:
@@ -36,7 +37,7 @@ class HandDetector:
         s_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10))
         motion_mask = cv2.dilate(motion_mask, s_element, iterations=10)
         motion_mask = cv2.erode(motion_mask, s_element, iterations=9)
-        motion_mask = self.get_max_contour(motion_mask, True)
+        _, motion_mask = self.get_max_contour(motion_mask, True)
         self.frame_2 = self.frame_1
         self.frame_1 = current_frame
         return motion_mask
@@ -47,11 +48,19 @@ class HandDetector:
         skin_mask = cv2.dilate(skin_mask, np.ones((3, 3)), iterations=2)
         return skin_mask.astype(np.bool_)
 
+    def get_contour_center(self, contour):
+        moments = cv2.moments(contour)
+        if moments["m00"] == 0:
+            return -1, -1
+        x = int(moments["m10"] / moments["m00"])
+        y = int(moments["m01"] / moments["m00"])
+        return x, y
+
     def detect_hand(self, frame):
         frame = cv2.GaussianBlur(frame, (5, 5), 0)
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         color_mask = self.get_color_mask(frame)
         motion_mask = self.get_motion_mask(gray_frame)
         mask = motion_mask & color_mask
-        mask = self.get_max_contour(mask)
-        return mask
+        contour, mask = self.get_max_contour(mask)
+        return self.get_contour_center(contour), mask
