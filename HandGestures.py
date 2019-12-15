@@ -23,7 +23,7 @@ class HandGestures:
         for k in keypoints:
             cv2.circle(thresholded, (int(k.pt[0]), int(k.pt[1])), int(k.size / 2), (0, 0, 255), -1)
 
-        cv2.imshow("binary", thresholded)
+        # cv2.imshow("binary", thresholded)
         chull = cv2.convexHull(segmented)
         extreme_top = tuple(chull[chull[:, :, 1].argmin()][0])
         extreme_bottom = tuple(chull[chull[:, :, 1].argmax()][0])

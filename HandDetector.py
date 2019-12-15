@@ -11,6 +11,9 @@ class HandDetector:
         self.max_YCrCb = np.array([255, 173, 127], np.uint8)
         self.last_contour = None
         self.haar_cascade_face = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+        self.channel_1_hist = np.zeros((256, 1))
+        self.channel_2_hist = np.zeros((256, 1))
+        self.channel_3_hist = np.zeros((256, 1))
 
     @staticmethod
     def __get_max_contour(mask, use_hull=False):
@@ -102,3 +105,31 @@ class HandDetector:
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 0), cv2.FILLED)
             cv2.rectangle(gray, (x, y), (x + w, y + h), (0, 0, 0), cv2.FILLED)
 
+    def calibrate(self, frame, reset=False):
+        if reset == True:
+            self.channel_1_hist = np.zeros((256, 1))
+            self.channel_2_hist = np.zeros((256, 1))
+            self.channel_3_hist = np.zeros((256, 1))
+
+        frame = cv2.GaussianBlur(frame, (5, 5), 0)
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YCR_CB)
+        motion_mask = self.get_motion_mask(gray_frame).astype(np.uint8)
+        temp = frame
+        temp[motion_mask == 0] = 0
+        cv2.imshow("mask", temp)
+        self.channel_1_hist += cv2.calcHist([frame], [0], motion_mask, [256], [0,256])
+        self.channel_2_hist[133:173] += cv2.calcHist([frame], [1], motion_mask, [256], [0,256])[133:173]
+        self.channel_3_hist[77:127] += cv2.calcHist([frame], [2], motion_mask, [256], [0,256])[77:127]
+        return np.argmax(self.channel_1_hist), np.argmax(self.channel_2_hist), np.argmax(self.channel_3_hist)
+
+        # self.min_YCrCb = np.array([0, 133, 77], np.uint8)
+        # self.max_YCrCb = np.array([255, 173, 127], np.uint8)
+
+    def set_color_threshold(self, y_1, cr_1, cb_1, y_2, cr_2, cb_2, margin=20):
+        a_y = (y_1 + y_2) // 2
+        a_cr = (cr_1 + cr_2) // 2
+        a_cb = (cb_1 + cb_2) // 2
+        self.min_YCrCb = np.array([0, a_cr - margin, a_cb - margin])
+        self.max_YCrCb = np.array([255, a_cr + margin, a_cb + margin])
+        print(self.min_YCrCb, self.max_YCrCb)
