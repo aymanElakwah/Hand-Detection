@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import imutils
 
+
 class HandDetector:
     def __init__(self):
         self.frame_1 = None
@@ -26,17 +27,17 @@ class HandDetector:
     def __draw_max_contour(contour, mask_shape):
         mask = np.zeros(mask_shape, np.uint8)
         if contour is None:
-            return mask.astype(np.uint8)
+            return mask.astype(np.bool_)
         cv2.drawContours(mask, [contour], 0, (1, 0, 0), cv2.FILLED)
         return mask.astype(np.bool_)
 
     def get_motion_mask(self, current_frame, threshold=30):
         if self.frame_2 is None:
             self.frame_2 = current_frame
-            return np.zeros(current_frame.shape, current_frame.dtype)
+            return np.zeros(current_frame.shape, np.bool_)
         elif self.frame_1 is None:
             self.frame_1 = current_frame
-            return np.zeros(current_frame.shape, current_frame.dtype)
+            return np.zeros(current_frame.shape, np.bool_)
         diff1 = cv2.absdiff(current_frame, self.frame_1)
         diff2 = cv2.absdiff(current_frame, self.frame_2)
         _, binary1 = cv2.threshold(diff1, threshold, 1, cv2.THRESH_BINARY)
