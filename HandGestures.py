@@ -50,7 +50,7 @@ class HandGestures:
             return "Moving Mouse"
         elif number_holes == 0 and count == 2:
             return "Left Click"
-        elif number_holes == 1 and (count >= 1 and count <= 3):  ##can be checked
+        elif number_holes == 1 and (count >= 1 or count <= 3):  ##can be checked
             return "right Click"
         elif number_holes == 1 and count == 0:
             return "Double Click"
