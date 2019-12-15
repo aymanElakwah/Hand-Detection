@@ -4,8 +4,9 @@ import HandGestures
 import cv2
 import numpy as np
 import threading 
-import queue
 import pyautogui as mv
+
+
 x_ratio = mv.size().width/640.0
 y_ratio = mv.size().height/480.0
 prev_center = mv.position()
@@ -35,7 +36,8 @@ while True:
     img = np.zeros(frame.shape, frame.dtype)
     img[hand_mask] = frame[hand_mask]
     cv2.circle(img, center, 7, (255, 255, 255), -1)
-    print(hand_gesture.count(hand_mask, contour))
+    gest = hand_gesture.count(hand_mask, contour)
+    cv2.putText(img, text=str(gest), org=(50, 100), color=(255, 0, 0), fontFace=0, fontScale=1, thickness=2)
     cv2.imshow("hand mask", img)
     if cv2.waitKey(5) & 0xFF == 27:
         break
