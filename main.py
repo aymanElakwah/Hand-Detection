@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import pyautogui as mv
+
 import HandDetector
 import HandGestures
 
@@ -20,6 +21,16 @@ while True:
         break
     frame = cv2.flip(frame, 1)
     contour, center, hand_mask = hand_detector.detect_hand(frame)
+    if center == (-1, -1):
+        center = (int(prev_x / x_ratio), int(prev_y / y_ratio))
+    cnt += 1
+    if cnt % 3 == 0:
+        x, y = center
+        x = int(x_ratio * x)
+        y = int(y * y_ratio)
+        mv.moveRel(x - prev_x, y - prev_y)
+        prev_x = x
+        prev_y = y
     img = np.zeros(frame.shape, frame.dtype)
     img[hand_mask] = frame[hand_mask]
     cv2.circle(img, center, 7, (255, 255, 255), -1)
