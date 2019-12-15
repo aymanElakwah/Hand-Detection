@@ -100,3 +100,5 @@ class HandDetector:
         faces_rects = self.haar_cascade_face.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5)
         for (x, y, w, h) in faces_rects:
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 0), cv2.FILLED)
+            cv2.rectangle(gray, (x, y), (x + w, y + h), (0, 0, 0), cv2.FILLED)
+
