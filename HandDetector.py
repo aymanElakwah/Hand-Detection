@@ -24,11 +24,15 @@ class HandDetector:
         return max_contour
 
     @staticmethod
-    def __draw_max_contour(contour, mask_shape):
+    def __draw_max_contour(contour, mask_shape, is_rect=False):
         mask = np.zeros(mask_shape, np.uint8)
         if contour is None:
             return mask.astype(np.bool_)
-        cv2.drawContours(mask, [contour], 0, (1, 0, 0), cv2.FILLED)
+        if is_rect == False:
+            cv2.drawContours(mask, [contour], 0, (1, 0, 0), cv2.FILLED)
+        else:
+            x, y, w, h = cv2.boundingRect(contour)
+            mask[y:y+h, x:x+w] = 1
         return mask.astype(np.bool_)
 
     def get_motion_mask(self, current_frame, threshold=30):
@@ -47,9 +51,9 @@ class HandDetector:
         s_element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10))
         motion_mask = cv2.dilate(motion_mask, s_element, iterations=10)
         motion_mask = cv2.erode(motion_mask, s_element, iterations=9)
-        max_contour = self.__get_max_contour(motion_mask, True)
+        max_contour = self.__get_max_contour(motion_mask, False)
         max_contour = self.check_contour(max_contour)
-        motion_mask = self.__draw_max_contour(max_contour, motion_mask.shape)
+        motion_mask = self.__draw_max_contour(max_contour, motion_mask.shape, True)
         self.frame_2 = self.frame_1
         self.frame_1 = current_frame
         return motion_mask
