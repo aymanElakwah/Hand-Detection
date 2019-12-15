@@ -28,7 +28,7 @@ while True:
         x, y = center
         x = int(x_ratio * x)
         y = int(y * y_ratio)
-        mv.moveTo(x, y)
+        # mv.moveTo(x, y)
         prev_x = x
         prev_y = y
     img = np.zeros(frame.shape, frame.dtype)
