@@ -143,6 +143,6 @@ class HandDetector:
         a_y = (y_1 + y_2) // 2
         a_cr = (cr_1 + cr_2) // 2
         a_cb = (cb_1 + cb_2) // 2
-        self.min_YCrCb = np.array([0, a_cr - margin, a_cb - margin])
-        self.max_YCrCb = np.array([255, a_cr + margin, a_cb + margin])
+        self.min_YCrCb = np.array([0, max(133, a_cr - margin), max(77, a_cb - margin)])
+        self.max_YCrCb = np.array([255, min(173, a_cr + margin), min(127, a_cb + margin)])
         print(self.min_YCrCb, self.max_YCrCb)
