@@ -14,6 +14,8 @@ class HandDetector:
         self.channel_1_hist = np.zeros((256, 1))
         self.channel_2_hist = np.zeros((256, 1))
         self.channel_3_hist = np.zeros((256, 1))
+        self.min_YCrCb = np.array([0, 133, 77], np.uint8)
+        self.max_YCrCb = np.array([255, 173, 127], np.uint8)
 
     @staticmethod
     def __get_max_contour(mask, use_hull=False):
@@ -116,7 +118,7 @@ class HandDetector:
         faces_rects = self.haar_cascade_face.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5)
         for (x, y, w, h) in faces_rects:
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 0), cv2.FILLED)
-            cv2.rectangle(gray, (x, y), (x + w, y + h), (0, 0, 0), cv2.FILLED)
+            # cv2.rectangle(gray, (x, y), (x + w, y + h), (0, 0, 0), cv2.FILLED)
 
     def calibrate(self, frame, reset=False):
         if reset == True:
@@ -136,8 +138,6 @@ class HandDetector:
         self.channel_3_hist[77:127] += cv2.calcHist([frame], [2], motion_mask, [256], [0, 256])[77:127]
         return np.argmax(self.channel_1_hist), np.argmax(self.channel_2_hist), np.argmax(self.channel_3_hist)
 
-        # self.min_YCrCb = np.array([0, 133, 77], np.uint8)
-        # self.max_YCrCb = np.array([255, 173, 127], np.uint8)
 
     def set_color_threshold(self, y_1, cr_1, cb_1, y_2, cr_2, cb_2, margin=20):
         a_y = (y_1 + y_2) // 2
