@@ -99,7 +99,7 @@ class HandDetector:
         mask = motion_mask & color_mask
         contour = self.__get_max_contour(mask)
         mask = self.__draw_max_contour(contour, mask.shape)
-        mask = self.open_holes(mask, frame)
+        # mask = self.open_holes(mask, frame)
         return contour, self.get_contour_center(contour), mask
 
     def check_contour(self, contour, min_area=20000, r=1):

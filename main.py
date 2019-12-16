@@ -8,8 +8,9 @@ import HandGestures
 hand_detector = HandDetector.HandDetector()
 hand_gesture = HandGestures.HandGestures()
 mouse_moving = mouse.MouseControl()
-cap = cv2.VideoCapture(0)
-n = 100
+# cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture("/hme/ayman/Desktop/video.mp4")
+n = 0
 half_n = int(n / 2)
 threshold_front_1 = threshold_front_2 = threshold_front_3 = 0
 threshold_back_1 = threshold_back_2 = threshold_back_3 = 0
@@ -17,6 +18,7 @@ while True:
     ret, frame = cap.read()
     if not ret:
         break
+    frame = cv2.resize(frame, (640, 480))
     frame = cv2.flip(frame, 1)
     if n > half_n:
         threshold_front_1, threshold_front_2, threshold_front_3 = hand_detector.calibrate(frame)
