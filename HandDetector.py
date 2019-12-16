@@ -102,7 +102,7 @@ class HandDetector:
         mask = self.open_holes(mask, frame)
         return contour, self.get_contour_center(contour), mask
 
-    def check_contour(self, contour, min_area=15000, r=1):
+    def check_contour(self, contour, min_area=20000, r=1):
         if contour is None:
             if self.last_contour is not None:
                 return self.last_contour

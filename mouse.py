@@ -26,15 +26,15 @@ class MouseControl:
             self.prev_y = y
     
     def mouse_action(self,gest):
-        if gest == 0:
+        if gest == "none":
             return
         if gest == "Left Click":
             mv.leftClick()
-        elif gest == "right Click":
+        elif gest == "Right Click":
             mv.rightClick()
         elif gest == "Double Click":
             mv.doubleClick()
-        elif gest == "Scroll up":
+        elif gest == "Scroll Up":
             mv.scroll(1)
         elif gest == "Scroll Down":
             mv.scroll(-1)
