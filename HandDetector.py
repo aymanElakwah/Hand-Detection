@@ -138,7 +138,6 @@ class HandDetector:
         self.channel_3_hist[77:127] += cv2.calcHist([frame], [2], motion_mask, [256], [0, 256])[77:127]
         return np.argmax(self.channel_1_hist), np.argmax(self.channel_2_hist), np.argmax(self.channel_3_hist)
 
-
     def set_color_threshold(self, y_1, cr_1, cb_1, y_2, cr_2, cb_2, margin=20):
         a_y = (y_1 + y_2) // 2
         a_cr = (cr_1 + cr_2) // 2
