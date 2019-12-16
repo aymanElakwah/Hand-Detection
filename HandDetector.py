@@ -82,16 +82,16 @@ class HandDetector:
         frame[hand_mask == 0] = 0
         external_edge = cv2.Canny(hand_mask.astype(np.uint8) * 255, 50, 150)
         external_edge = cv2.dilate(external_edge, np.ones((5, 5)), iterations=1).astype(np.bool_)
-        all_edges = cv2.Canny(frame, 50, 150).astype(np.bool_)
+        all_edges = cv2.Canny(frame, 100, 150).astype(np.bool_)
         internal_edge = (all_edges & external_edge.__invert__())
-        internal_edge = cv2.dilate(internal_edge.astype(np.uint8), np.ones((3, 3)), iterations=0).astype(np.bool_)
+        # internal_edge = cv2.dilate(internal_edge.astype(np.uint8), np.ones((3, 3)), iterations=0).astype(np.bool_)
         contour = self.__get_max_contour(internal_edge)
         internal_mask = self.__draw_max_contour(contour, internal_edge.shape)
         hand_mask = (hand_mask & internal_mask.__invert__())
         return hand_mask
 
     def detect_hand(self, frame):
-        frame = cv2.GaussianBlur(frame, (11, 11), 0)
+        frame = cv2.GaussianBlur(frame, (5, 5), 0)
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         self.remove_face(gray_frame, frame)
         color_mask = self.get_color_mask(frame)
@@ -143,6 +143,6 @@ class HandDetector:
         a_y = (y_1 + y_2) // 2
         a_cr = (cr_1 + cr_2) // 2
         a_cb = (cb_1 + cb_2) // 2
-        self.min_YCrCb = np.array([0, a_cr - margin, a_cb - margin])
-        self.max_YCrCb = np.array([255, a_cr + margin, a_cb + margin])
+        self.min_YCrCb = np.array([0, max(133, a_cr - margin), max(77, a_cb - margin)])
+        self.max_YCrCb = np.array([255, min(173, a_cr + margin), min(127, a_cb + margin)])
         print(self.min_YCrCb, self.max_YCrCb)

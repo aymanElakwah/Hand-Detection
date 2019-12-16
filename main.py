@@ -11,6 +11,7 @@ mouse_moving = mouse.MouseControl()
 cap = cv2.VideoCapture(0)
 
 n = 0
+half_n = int(n / 2)
 threshold_front_1 = threshold_front_2 = threshold_front_3 = 0
 threshold_back_1 = threshold_back_2 = threshold_back_3 = 0
 while True:
@@ -18,7 +19,7 @@ while True:
     if not ret:
         break
     frame = cv2.flip(frame, 1)
-    if n > 50:
+    if n > half_n:
         threshold_front_1, threshold_front_2, threshold_front_3 = hand_detector.calibrate(frame)
         n -= 1
         cv2.putText(frame, text="Move your front hand", org=(50, 100), color=(255, 0, 0), fontFace=0, fontScale=1,
@@ -27,7 +28,7 @@ while True:
         if cv2.waitKey(5) & 0xFF == 27:
             break
     elif n > 0:
-        if n == 50:
+        if n == half_n:
             threshold_back_1, threshold_back_2, threshold_back_3 = hand_detector.calibrate(frame, True)
         else:
             threshold_back_1, threshold_back_2, threshold_back_3 = hand_detector.calibrate(frame)
@@ -38,7 +39,7 @@ while True:
         if cv2.waitKey(5) & 0xFF == 27:
             break
         if n == 0:
-            hand_detector.set_color_threshold(threshold_front_1, threshold_front_2, threshold_front_3, threshold_back_1,threshold_back_2, threshold_back_3, 10)
+            hand_detector.set_color_threshold(threshold_front_1, threshold_front_2, threshold_front_3, threshold_back_1,threshold_back_2, threshold_back_3, 7)
     else:
         contour, center, hand_mask = hand_detector.detect_hand(frame)
         #mouse_moving.move_mouse(center)
